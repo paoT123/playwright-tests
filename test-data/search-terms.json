@@ -1,0 +1,6 @@
+[
+  { "term": "Dress", "expectMinResults": 1 },
+  { "term": "Top", "expectMinResults": 1 },
+  { "term": "Jeans", "expectMinResults": 1 },
+  { "term": "Shirt", "expectMinResults": 1 }
+]

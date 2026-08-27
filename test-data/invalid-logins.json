@@ -1,0 +1,16 @@
+[
+  {
+    "case": "non-existent account",
+    "email": "definitely.not.a.real.user@example.com",
+    "password": "whatever123",
+    "expectedResponseCode": 404,
+    "expectedMessage": "User not found!"
+  },
+  {
+    "case": "missing password field entirely",
+    "email": "someone@example.com",
+    "password": null,
+    "expectedResponseCode": 400,
+    "expectedMessage": "Bad request, email or password parameter is missing in POST request."
+  }
+]
