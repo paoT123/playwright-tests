@@ -239,6 +239,34 @@ repo is actually hosted/built — you don't need both.
   in this repo for the concrete example.
 - Runs on GitHub-hosted runners by default; results show up under the repo's
   **Actions** tab.
+- The `setup-node` step already uses `cache: 'npm'`, caching npm's dependency cache
+  keyed on `package-lock.json` to speed up `npm ci` — this is a standard, unopinionated
+  win with no real downside.
+
+**Optional: caching the Playwright browser binaries too.** Not currently in
+`tests.yml`, and deliberately left out — unlike the npm cache above, this one is a
+genuinely debated practice rather than a clear standard. Playwright's own CI
+guidance is lukewarm on it: the browser download is usually fast enough over
+Microsoft's CDN that the time saved is modest, and a stale cache can end up serving
+a browser binary that no longer matches the installed `@playwright/test` version
+after a version bump — a version-skew bug that's annoying to debug. If you want it
+anyway, add this step **between the `npm ci` step and the `npx playwright install
+--with-deps` step**:
+
+```yaml
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+```
+
+Keying it on `package-lock.json`'s hash means a Playwright version bump changes the
+key and busts the cache automatically, which mostly neutralizes the version-skew
+risk — but `npx playwright install --with-deps` still needs to run unconditionally
+every time regardless (it also apt-installs OS-level system libraries on the fresh
+runner, which this cache doesn't cover); Playwright's CLI just detects the browser
+is already present at the expected version and skips re-downloading it.
 
 ### Azure Pipelines
 

@@ -208,7 +208,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
+        with:
+          node-version: 20
+          cache: 'npm'
       - run: npm ci
       - run: npx playwright install --with-deps
       - run: npx playwright test
@@ -216,6 +218,30 @@ jobs:
         if: always()
         with: { name: playwright-report, path: playwright-report/ }
 ```
+
+`cache: 'npm'` on `setup-node` caches npm's own cache (keyed on `package-lock.json`),
+speeding up `npm ci` — this part is an unambiguous, universally-used standard.
+
+**Optional: also caching the Playwright browser binaries.** Not added above on
+purpose — it's a genuinely debated practice, not a clear standard. Playwright's own
+CI docs are lukewarm on it: the browser download is usually fast enough over
+Microsoft's CDN that the saved time is modest, and a stale cache can serve a browser
+binary that no longer matches the `@playwright/test` version after a bump, which is
+an annoying class of bug to debug. If you still want it, insert this step between
+`npm ci` and `npx playwright install --with-deps`:
+
+```yaml
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+```
+
+Keying it on `package-lock.json`'s hash means a Playwright version bump changes the
+key and busts the cache automatically, which mostly neutralizes the version-skew
+risk above — but it's still one more moving part for a download that often isn't
+the actual bottleneck.
 
 This runs the same `npx playwright test` command you just verified locally, on every
 push and pull request to `main`, and uploads the HTML report as a downloadable artifact
